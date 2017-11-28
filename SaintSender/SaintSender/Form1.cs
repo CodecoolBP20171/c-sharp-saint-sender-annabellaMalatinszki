@@ -19,6 +19,7 @@ namespace SaintSender
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            MailService mailService = new MailService();
             letterPicture.ImageLocation = "C:\\Users\\amala\\Documents\\Codecool\\C#\\TW_assignments\\c-sharp-saint-sender-annabellaMalatinszki\\SaintSender\\letter.png";
             letterPicture.SizeMode = PictureBoxSizeMode.StretchImage;
         }
