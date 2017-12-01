@@ -2,7 +2,6 @@
 using Google.Apis.Gmail.v1.Data;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace SaintSender
 {
@@ -10,96 +9,123 @@ namespace SaintSender
     {
         GmailService service = MailService.Service;
 
-        // Some properties might be better off as not strings, review later.
         private string emailId;
-
         public string EmailId
         {
             get { return emailId; }
         }
 
         private string emailSubject;
-
         public string EmailSubject
         {
             get { return emailSubject; }
         }
 
         private string  sender;
-
         public string Sender
         {
             get { return sender; }
         }
 
         private string receiver;
-
         public string Receiver
         {
             get { return receiver; }
         }
 
         private string emailDate;
-
         public string EmailDate
         {
             get { return emailDate; }
         }
 
-        private string received;
-
-        public string Received
-        {
-            get { return received; }
-        }
-
         private string emailBody;
-
         public string EmailBody
         {
             get { return emailBody; }
         }
 
-        public Email(Message message)
+        private string emailBodyHTML;
+        public string EmailBodyHTML
+        {
+            get { return emailBodyHTML; }
+        }
+
+        private MessageLabel emailLabel;
+        public MessageLabel EmailLabel
+        {
+            get { return emailLabel; }
+        }
+
+
+        public Email(Message message, MessageLabel label)
         {
             GmailService service = MailService.Service;
             MessagePart messagePayload = GetEmailDetails(message);
-            if (messagePayload != null)
+
+            foreach (var payloadHeader in messagePayload.Headers)
             {
-                emailId = messagePayload.Headers[4].Value;
-                emailSubject = messagePayload.Headers[5].Value;
-                sender = messagePayload.Headers[6].Value;
-                receiver = messagePayload.Headers[7].Value;
-                emailDate = messagePayload.Headers[3].Value;
-                received = messagePayload.Headers[2].Value;
-                emailBody = GetEmailBody(messagePayload.Parts);
+                if (payloadHeader.Name == "Message-ID")
+                {
+                    emailId = payloadHeader.Value;
+                }
+                else if (payloadHeader.Name == "Subject")
+                {
+                    emailSubject = payloadHeader.Value;
+                }
+                else if (payloadHeader.Name == "From")
+                {
+                    sender = payloadHeader.Value;
+                }
+                else if (payloadHeader.Name == "To")
+                {
+                    receiver = payloadHeader.Value;
+                }
+                else if (payloadHeader.Name == "Date")
+                {
+                    emailDate = payloadHeader.Value;
+                }
             }
-            else
-            {
-                //Handle here if messagePayload is empty.
-            }
+            emailBody = GetEmailBody(messagePayload.Parts, "plain");
+            emailBodyHTML = GetEmailBody(messagePayload.Parts, "html");
+            emailLabel = label;
         }
 
+        // Retrieve the message payload.
         private MessagePart GetEmailDetails(Message message)
         {
             UsersResource.MessagesResource.GetRequest singleMessage = service.Users.Messages.Get("me", message.Id);
+
             MessagePart messagePayload = singleMessage.Execute().Payload;
+
             return messagePayload;
         }
 
-        private string GetEmailBody(IList<MessagePart> messageParts)
+        // Retrieve the body of the message in both plain text and html format from the message payload.
+        private string GetEmailBody(IList<MessagePart> messageParts, string textType)
         {
-            string decodedBody;
-            if (!string.IsNullOrWhiteSpace(messageParts[0].Body.Data))
+            string decodedBody = null;
+
+            try
             {
-                string InputStr = messageParts[0].Body.Data.Replace("-", "+").Replace("_", "/");
-                decodedBody = Encoding.UTF8.GetString(Convert.FromBase64String(InputStr));
-                return decodedBody;
+                if (!string.IsNullOrWhiteSpace(messageParts[0].Body.Data))
+                {
+                    if (textType == "plain")
+                    {
+                        decodedBody = Encoder.ConvertFromBase64(messageParts[0].Body.Data);
+                    }
+                    else if (textType == "html")
+                    {
+                        decodedBody = Encoder.ConvertFromBase64(messageParts[1].Body.Data);
+                    }
+                }
             }
-            else
+            catch (NullReferenceException e)
             {
-                return null;
+                Console.WriteLine("Well, shit happens: {0}", e.StackTrace);
             }
+
+            return decodedBody;
         }
     }
 }

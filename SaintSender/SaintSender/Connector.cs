@@ -1,35 +1,26 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Gmail.v1;
-using Google.Apis.Gmail.v1.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SaintSender
 {
     class Connector
     {
-        static string[] Scopes = { GmailService.Scope.GmailReadonly };
+        static string[] Scopes = { GmailService.Scope.MailGoogleCom };
+
         static string ApplicationName = "Gmail API .NET Quickstart";
 
         private GmailService service;
-
         public GmailService Service
         {
             get { return service; }
         }
 
-        public GmailService GetService()
-        {
-            return service;
-        }
-
+        // Connect to Gmail API.
         public void Connect()
         {
             UserCredential credential;
